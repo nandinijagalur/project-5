@@ -57,7 +57,7 @@ stages:
             inputs:
               type: 'fs'
               target: '.'
-              scanners: 'vuln'
+              scanners: 'secret'
               severity: 'HIGH'
               exitCode: '1'
 
@@ -66,7 +66,7 @@ stages:
             inputs:
               type: 'image'
               target: '$(acrName).azurecr.io/$(imageName):$(tag)'
-              scanners: 'vuln'
+              scanners: 'secret'
               severity: 'HIGH'
               exitCode: '1'
 
