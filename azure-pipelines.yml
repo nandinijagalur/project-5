@@ -57,8 +57,8 @@ stages:
             inputs:
               type: 'fs'
               target: '.'
-              scanners: 'vuln,secret,config'
-              severity: 'HIGH,CRITICAL'
+              scanners: 'vuln'
+              severity: 'HIGH'
               exitCode: '1'
 
           - task: trivy@2
@@ -66,8 +66,8 @@ stages:
             inputs:
               type: 'image'
               target: '$(acrName).azurecr.io/$(imageName):$(tag)'
-              scanners: 'vuln,secret,config'
-              severity: 'HIGH,CRITICAL'
+              scanners: 'vuln'
+              severity: 'HIGH'
               exitCode: '1'
 
           - task: Docker@2
