@@ -59,7 +59,7 @@ stages:
               target: '.'
               scanners: 'vuln,secret,config'
               severity: 'HIGH,CRITICAL'
-              exitCode: '0'
+              exitCode: '1'
 
           - task: trivy@2
             displayName: Trivy Docker Image Scan
