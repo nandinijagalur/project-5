@@ -25,12 +25,15 @@ stages:
               jdkArchitectureOption: 'x64'
               jdkSourceOption: 'PreInstalled'
 
-          - task: SonarCloudPrepare@7
+          - task: SonarCloudPrepare@1
             displayName: SonarCloud Prepare
             inputs:
-              SonarCloud: 'sonarcloud-connection'
+              SonarCloud: 'sonarcloud-sc'
               organization: 'nandiniChetan3004'
               scannerMode: 'Other'
+              extraProperties: |
+                sonar.projectKey=nandinijagalur_project-5
+                sonar.organization=nandinichetan3004
 
          
 
@@ -47,7 +50,7 @@ stages:
               sonarQubeRunAnalysis: true
               sqMavenPluginVersionChoice: 'latest'
 
-          - task: SonarCloudPublish@7
+          - task: SonarCloudPublish@1
             displayName: SonarCloud Quality Gate
             inputs:
               pollingTimeoutSec: '300'
@@ -58,7 +61,7 @@ stages:
               command: build
               repository: '$(imageName)'
               dockerfile: 'spring_app_latest-master/Dockerfile'
-              containerRegistry: 'acr-service-connection'
+              containerRegistry: 'acr-sc'
               tags: |
                 $(tag)
 
@@ -85,7 +88,7 @@ stages:
             inputs:
               command: push
               repository: '$(imageName)'
-              containerRegistry: 'acr-service-connection'
+              containerRegistry: 'acr-sc'
               tags: |
                 $(tag)
 
