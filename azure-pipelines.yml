@@ -25,6 +25,15 @@ stages:
               jdkArchitectureOption: 'x64'
               jdkSourceOption: 'PreInstalled'
 
+          - task: SonarCloudPrepare@1
+            displayName: SonarCloud Prepare
+            inputs:
+              SonarCloud: 'sonarcloud-connection'
+              organization: 'nandiniChetan3004'
+              scannerMode: 'Other'
+
+         
+
           - task: Maven@4
             displayName: Build spring boot app
             inputs:
@@ -35,17 +44,55 @@ stages:
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.17'
               mavenVersionOption: 'Default'
-          - task: CopyFiles@2
-            displayName: 'Copy JAR File'
+              sonarQubeRunAnalysis: true
+              sqMavenPluginVersionChoice: 'latest'
+
+          - task: SonarCloudPublish@1
+            displayName: SonarCloud Quality Gate
             inputs:
-              SourceFolder: '$(System.DefaultWorkingDirectory)/spring_app_latest-master/target'
-              Contents: '*.jar'
-              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              pollingTimeoutSec: '300'
+
+          - task: Docker@2
+            displayName: Build docker image
+            inputs:
+              command: build
+              repository: '$(imageName)'
+              dockerfile: 'spring_app_latest-master/Dockerfile'
+              containerRegistry: 'acr-service-connection'
+              tags: |
+                $(tag)
+
+          - task: trivy@2
+            displayName: Trivy File System Scan
+            inputs:
+              type: 'fs'
+              target: '.'
+              scanners: 'vuln,secret,config'
+              severity: 'HIGH,CRITICAL'
+              exitCode: '0'
+
+          - task: trivy@2
+            displayName: Trivy Docker Image Scan
+            inputs:
+              type: 'image'
+              target: '$(acrName).azurecr.io/$(imageName):$(tag)'
+              scanners: 'vuln,secret,config'
+              severity: 'HIGH,CRITICAL'
+              exitCode: '1'
+
+          - task: Docker@2
+            displayName: Push Docker Image
+            inputs:
+              command: push
+              repository: '$(imageName)'
+              containerRegistry: 'acr-service-connection'
+              tags: |
+                $(tag)
 
           - task: PublishBuildArtifacts@1
-            displayName: 'Publish build artifact'
+            displayName: Publish Build Artifacts
             inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              PathtoPublish: '$(Build.SourcesDirectory)'
               ArtifactName: 'drop'
-
+              publishLocation: 'Container'
 
