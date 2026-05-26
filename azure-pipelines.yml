@@ -38,8 +38,7 @@ stages:
               javaHomeOption: 'JDKVersion'
               jdkVersionOption: '1.17'
               mavenVersionOption: 'Default'
-              sonarQubeRunAnalysis: true
-              sqMavenPluginVersionChoice: 'latest'
+              
 
           
 
