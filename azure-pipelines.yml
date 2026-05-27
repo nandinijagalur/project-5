@@ -9,9 +9,16 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  imageName: 'java-app'
-  acrName: 'project5acr'
-  tag: '$(Build.BuildId)'
+- group: github-secrets
+
+- name: imageName
+  value: 'java-app'
+
+- name: acrName
+  value: 'project5acr'
+
+- name: tag
+  value: '$(Build.BuildId)'
 
 stages:
 - stage: CI
