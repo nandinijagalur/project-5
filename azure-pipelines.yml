@@ -93,7 +93,7 @@ stages:
 
         echo "Updating image tag in mydeploy.yml"
 
-        sed -i 's|image:.*|image: project5acr.azurecr.io/java-app:.*|image: project5acr.azurecr.io/java-app:$(tag)|g' mydeploy.yml
+        sed -i "s#java-app:.*#java-app:$(tag)#" mydeploy.yml
 
         echo "Updated Manifest"
 
