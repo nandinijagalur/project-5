@@ -1,88 +1,114 @@
 # Starter pipeline
 # Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+# Add steps to build, test, scan, push, and update manifests.
 
 trigger:
 - main
 
 pool:
   vmImage: ubuntu-latest
+
 variables:
-    imageName: 'java-app'
-    acrName: 'project5acr'
-    tag: '$(Build.BuildId)'
+  imageName: 'java-app'
+  acrName: 'project5acr'
+  tag: '$(Build.BuildId)'
 
 stages:
-  - stage: CI
-    jobs:
-      - job: Build_Test_Scan_Push
-        steps:
-          - checkout: self
-          - task: JavaToolInstaller@1
-            inputs:
-              versionSpec: '17'
-              jdkArchitectureOption: 'x64'
-              jdkSourceOption: 'PreInstalled'
-          
+- stage: CI
+  jobs:
+  - job: Build_Test_Scan_Push
 
-         
+    steps:
 
-          - task: Maven@4
-            displayName: Build spring boot app
-            inputs:
-              mavenPomFile: 'spring_app_latest-master/pom.xml'  
-              goals: 'clean package'  
-              publishJUnitResults: true
-              testResultsFiles: '**/surefire-reports/TEST-*.xml'
-              javaHomeOption: 'JDKVersion'
-              jdkVersionOption: '1.17'
-              mavenVersionOption: 'Default'
-              
+    - checkout: self
 
-          
+    - task: JavaToolInstaller@1
+      inputs:
+        versionSpec: '17'
+        jdkArchitectureOption: 'x64'
+        jdkSourceOption: 'PreInstalled'
 
-          - task: Docker@2
-            displayName: Build docker image
-            inputs:
-              command: build
-              repository: '$(imageName)'
-              dockerfile: 'spring_app_latest-master/Dockerfile'
-              containerRegistry: 'acr-sc'
-              tags: |
-                $(tag)
+    - task: Maven@4
+      displayName: Build spring boot app
+      inputs:
+        mavenPomFile: 'spring_app_latest-master/pom.xml'
+        goals: 'clean package'
+        publishJUnitResults: true
+        testResultsFiles: '**/surefire-reports/TEST-*.xml'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '1.17'
+        mavenVersionOption: 'Default'
 
-          - task: trivy@2
-            displayName: Trivy File System Scan
-            inputs:
-              type: 'fs'
-              target: '.'
-              scanners: 'secret'
-              severity: 'HIGH'
-              exitCode: '1'
+    - task: Docker@2
+      displayName: Build docker image
+      inputs:
+        command: build
+        repository: '$(imageName)'
+        dockerfile: 'spring_app_latest-master/Dockerfile'
+        containerRegistry: 'acr-sc'
+        tags: |
+          $(tag)
 
-          - task: trivy@2
-            displayName: Trivy Docker Image Scan
-            inputs:
-              type: 'image'
-              target: '$(acrName).azurecr.io/$(imageName):$(tag)'
-              scanners: 'secret'
-              severity: 'HIGH'
-              exitCode: '1'
+    - task: trivy@2
+      displayName: Trivy File System Scan
+      inputs:
+        type: 'fs'
+        target: '.'
+        scanners: 'secret'
+        severity: 'HIGH'
+        exitCode: '1'
 
-          - task: Docker@2
-            displayName: Push Docker Image
-            inputs:
-              command: push
-              repository: '$(imageName)'
-              containerRegistry: 'acr-sc'
-              tags: |
-                $(tag)
+    - task: trivy@2
+      displayName: Trivy Docker Image Scan
+      inputs:
+        type: 'image'
+        target: '$(acrName).azurecr.io/$(imageName):$(tag)'
+        scanners: 'secret'
+        severity: 'HIGH'
+        exitCode: '1'
 
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build Artifacts
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)'
-              ArtifactName: 'drop'
-              publishLocation: 'Container'
+    - task: Docker@2
+      displayName: Push Docker Image
+      inputs:
+        command: push
+        repository: '$(imageName)'
+        containerRegistry: 'acr-sc'
+        tags: |
+          $(tag)
 
+    - script: |
+
+        echo "Cloning GitOps repository"
+
+        git clone https://$(GITHUB_TOKEN)@github.com/nandinijagalur/Argocd-gitops.git
+
+        cd Argocd-gitops
+
+        echo "Updating image tag in mydeploy.yml"
+
+        sed -i 's|image:.*|image: project5acr.azurecr.io/java-app:.*|image: project5acr.azurecr.io/java-app:$(tag)|g' mydeploy.yml
+
+        echo "Updated Manifest"
+
+        cat mydeploy.yml
+
+        git config --global user.email "nandinijagalur@gmail.com"
+        git config --global user.name "nandinijagalur"
+
+        git add mydeploy.yml
+
+        git commit -m "Updated image tag to $(tag)"
+
+        git push origin main
+
+      displayName: Update GitOps Manifest
+
+      env:
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Build Artifacts
+      inputs:
+        PathtoPublish: '$(Build.SourcesDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
