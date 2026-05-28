@@ -89,26 +89,28 @@ stages:
 
         git clone https://$(GITHUB_TOKEN)@github.com/nandinijagalur/Argocd-gitops.git
 
-        cd Argocd-gitops
+        cd Argocd-gitops/java-app
 
         echo "Updating image tag in mydeploy.yml"
 
         sed -i "s#java-app:.*#java-app:$(tag)#" mydeploy.yml
 
-        echo "Updated Manifest"
+        echo "Updating image tag in values.yaml"
 
-        cat mydeploy.yml
+        sed -i "s/tag:.*/tag: \"$(tag)\"/" values.yaml
+        echo "Updated values.yaml"
+        cat values.yaml
 
         git config --global user.email "nandinijagalur@gmail.com"
         git config --global user.name "nandinijagalur"
 
-        git add mydeploy.yml
+        git add values.yaml
 
         git commit -m "Updated image tag to $(tag)"|| echo "No changes to commit"
 
         git push origin main
 
-      displayName: Update GitOps Manifest
+      displayName: Update Helm values.yaml
 
       env:
         GITHUB_TOKEN: $(GITHUB_TOKEN)
